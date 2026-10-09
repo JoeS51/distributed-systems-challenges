@@ -53,3 +53,6 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Maelstrom/Jepsen generated test results
+/store/
