@@ -1,11 +1,15 @@
 #include <stdio.h>
 #include <cjson/cJSON.h>
 #include <string.h>
+#include <stdlib.h>
 
 void handle_message(const cJSON *root);
 void send_init(const cJSON *src, const cJSON *dest, const cJSON *msg_id);
 void send_echo(const cJSON *src, const cJSON *dest, const cJSON *msg_id, const cJSON *echo);
-void send_generate(const cJSON *src, const cJSON*dest, const cJSON *msg_id, const int node_id);
+void send_generate(const cJSON *src, const cJSON *dest, const cJSON *msg_id, const int node_id);
+
+int unique_idx = 0;
+int total_node_count = 0;
 
 int main(void) {
   char buffer[4096];
@@ -38,13 +42,16 @@ void handle_message(const cJSON *root) {
 
 
     if (cJSON_IsString(type) && strcmp(type->valuestring, "init") == 0) {
+      cJSON *nodes = cJSON_GetObjectItemCaseSensitive(body, "node_ids");
+      total_node_count = cJSON_GetArraySize(nodes);
       send_init(src, dest, msg_id);
     } else if (cJSON_IsString(type) && strcmp(type->valuestring, "echo") == 0) {
       send_echo(src, dest, msg_id, echo);
     } else if (cJSON_IsString(type) && strcmp(type->valuestring, "generate") == 0) {
       char* node = dest->valuestring;
-      
-      send_generate(src, dest, msg_id);
+      int node_id = (int) strtol(node + 1, NULL, 10);
+      fprintf(stderr, "parsed int %s", msg_id);
+      send_generate(src, dest, msg_id, node_id);
     } else {
       fprintf(stderr, "else case");
     }
@@ -104,7 +111,11 @@ void send_generate(const cJSON *src, const cJSON *dest, const cJSON *msg_id, con
   cJSON *body = cJSON_CreateObject();
   cJSON_AddStringToObject(body, "type", "generate_ok");
   cJSON_AddNumberToObject(body, "in_reply_to", msg_id->valueint);
-  cJSON_AddNumberToObject(body, "id", 1);
+
+  int unique_id = unique_idx * total_node_count + node_id;
+  unique_idx += 1;
+
+  cJSON_AddNumberToObject(body, "id", unique_id);
   cJSON_AddItemToObject(response, "body", body);
 
   char *json = cJSON_PrintUnformatted(response);
