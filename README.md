@@ -1,2 +1,1 @@
-# distributed-system-challenges
-fly.io's distributed system challenges in C
+# Fly.io's distributed system challenges in C
